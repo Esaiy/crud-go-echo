@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  db:
+    image: mysql/mysql-server
+    container_name: db-magang
+    environment:
+      MYSQL_ROOT_PASSWORD: toor
+      MYSQL_DATABASE: users
+      MYSQL_USER: db_user
+      MYSQL_PASSWORD: db_user_pass
+    ports:
+      - "6033:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+volumes:
+  dbdata:
