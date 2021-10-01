@@ -163,6 +163,7 @@ func (h *Handler) CreateUser(c echo.Context) error {
 }
 
 func (h *Handler) UpdateUser(c echo.Context) error {
+	changed := false
 	query := "SELECT * FROM users WHERE id = ?"
 	userId, _ := strconv.Atoi(c.Param("id"))
 	var user User
@@ -180,6 +181,7 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 
 	if username := c.FormValue("username"); username != "" {
 		user.Username = username
+		changed = true
 	}
 	if email := c.FormValue("email"); email != "" {
 		rxEmail := regexp.MustCompile(`.+@.+\..+`)
@@ -190,18 +192,27 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 			})
 		}
 		user.Email = email
+		changed = true
+	}
+	if roles := c.FormValue("roles"); roles != "" {
+		roles, err := strconv.Atoi(c.FormValue("roles"))
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"message": `Field 'roles' harus berupa integer!`,
+			})
+		}
+		user.Roles = roles
+		changed = true
 	}
 
-	roles, err := strconv.Atoi(c.FormValue("roles"))
-	if err != nil {
+	if !changed {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"message": `Field 'roles' harus berupa integer!`,
+			"message": `Tidak ada perubahan yang dilakukan terhadap user`,
 		})
 	}
-	user.Roles = roles
 
 	query2 := "UPDATE users set username = ?, email = ?, roles = ? where id = ?"
-	_, err = h.DB.Exec(query2, user.Username, user.Email, user.Roles, user.Id)
+	_, err := h.DB.Exec(query2, user.Username, user.Email, user.Roles, user.Id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"message": "Terjadi kesalahan pada server",
